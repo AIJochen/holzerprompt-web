@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+
+    <title>
+        {% if page.meta_title %}
+            {{ page.meta_title }}
+        {% else %}
+            {{ page.title }}
+        {% endif %}
+    </title>
+
+    {% if page.meta_description %}
+        <meta name="description" content="{{ page.meta_description }}">
+    {% endif %}
+</head>
+
+<body>
+
+    {% for block in page.blocks.all %}
+
+        {% if block.is_active %}
+
+            {% if block.block_type == "hero" %}
+                {% include "website/blocks/hero.html" %}
+            {% else %}
+                <p>
+                    Blocktyp „{{ block.block_type }}“ ist noch nicht implementiert.
+                </p>
+            {% endif %}
+
+        {% endif %}
+
+    {% endfor %}
+
+</body>
+</html>

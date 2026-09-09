@@ -1,0 +1,26 @@
+<section class="hero">
+
+    {% if block.media %}
+        <img
+            src="{{ block.media.file.url }}"
+            alt="{{ block.media.alt_text }}"
+        >
+    {% endif %}
+
+    {% if block.data.headline %}
+        <h1>{{ block.data.headline }}</h1>
+    {% endif %}
+
+    {% if block.data.text %}
+        <p>{{ block.data.text }}</p>
+    {% endif %}
+
+    {% if block.data.button_label and block.data.button_url %}
+        <p>
+            <a href="{{ block.data.button_url }}">
+                {{ block.data.button_label }}
+            </a>
+        </p>
+    {% endif %}
+
+</section>
