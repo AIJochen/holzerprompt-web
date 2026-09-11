@@ -1,26 +1,108 @@
-<section class="hero">
-
-    {% if block.media %}
-        <img
-            src="{{ block.media.file.url }}"
-            alt="{{ block.media.alt_text }}"
-        >
+{% with variant=block.data.variant|default:"standard" %}
+<section
+    {% if block.data.html_id %}
+        id="{{ block.data.html_id }}"
     {% endif %}
+    class="
+        hp-hero
+        hp-hero--{{ variant }}
 
-    {% if block.data.headline %}
-        <h1>{{ block.data.headline }}</h1>
-    {% endif %}
+        {% if block.data.content_alignment %}
+            hp-hero--align-{{ block.data.content_alignment }}
+        {% endif %}
 
-    {% if block.data.text %}
-        <p>{{ block.data.text }}</p>
-    {% endif %}
+        {% if block.data.image_position %}
+            hp-hero--image-{{ block.data.image_position }}
+        {% endif %}
 
-    {% if block.data.button_label and block.data.button_url %}
-        <p>
-            <a href="{{ block.data.button_url }}">
-                {{ block.data.button_label }}
-            </a>
-        </p>
-    {% endif %}
+        {% if block.data.extra_css_classes %}
+            {{ block.data.extra_css_classes }}
+        {% endif %}
+    "
+>
+
+    <div class="container">
+
+        <div class="row align-items-center g-4">
+
+            <div class="col-12 col-lg-6">
+
+                {% if block.data.eyebrow %}
+                    <p class="hp-hero__eyebrow">
+                        {{ block.data.eyebrow }}
+                    </p>
+                {% endif %}
+
+                {% if block.data.headline %}
+                    <h1 class="hp-hero__headline">
+                        {{ block.data.headline }}
+                    </h1>
+                {% endif %}
+
+                {% if block.data.text %}
+                    <p class="hp-hero__text">
+                        {{ block.data.text }}
+                    </p>
+                {% endif %}
+
+                {% if block.data.button_label and block.data.button_url %}
+                    <p class="hp-hero__cta">
+                        <a
+                            class="btn btn-primary"
+                            href="{{ block.data.button_url }}"
+                        >
+                            {{ block.data.button_label }}
+                        </a>
+                    </p>
+                {% endif %}
+
+            </div>
+
+
+            {% if block.media %}
+
+                <div class="col-12 col-lg-6 hp-hero__media">
+
+                    <img
+                        class="
+                            hp-hero__image
+
+                            {% if block.data.image_fit %}
+                                hp-hero__image--{{ block.data.image_fit }}
+                            {% endif %}
+                        "
+
+                        src="{{ block.media.file.url }}"
+
+                        alt="{{ block.media.alt_text }}"
+
+                        {% if block.data.image_width %}
+                            width="{{ block.data.image_width }}"
+                        {% elif block.media.width %}
+                            width="{{ block.media.width }}"
+                        {% endif %}
+
+                        {% if block.data.image_height %}
+                            height="{{ block.data.image_height }}"
+                        {% elif block.media.height %}
+                            height="{{ block.media.height }}"
+                        {% endif %}
+
+                        {% if block.data.image_loading == "lazy" %}
+                            loading="lazy"
+                        {% elif block.data.image_loading == "priority" %}
+                            loading="eager"
+                            fetchpriority="high"
+                        {% endif %}
+                    >
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
 
 </section>
+{% endwith %}

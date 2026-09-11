@@ -1,4 +1,5 @@
 from django.contrib import admin
+from .forms import PageBlockAdminForm
 
 from .models import (
     KnowledgeArticle,
@@ -13,15 +14,54 @@ from .models import (
 
 class PageBlockInline(admin.StackedInline):
     model = PageBlock
+    form = PageBlockAdminForm
     extra = 0
-    fields = (
-        "block_type",
-        "media",
-        "position",
-        "is_active",
-        "data",
-    )
     ordering = ("position",)
+
+    fieldsets = (
+        (
+            "Block",
+            {
+                "fields": (
+                    "block_type",
+                    "position",
+                    "is_active",
+                )
+            },
+        ),
+        (
+            "Hero – Inhalt",
+            {
+                "fields": (
+                    "eyebrow",
+                    "headline",
+                    "text",
+                    "button_label",
+                    "button_url",
+                    "media",
+                )
+            },
+        ),
+        (
+            "Hero – Erweitert",
+            {
+                "fields": (
+                    "variant",
+                    "content_alignment",
+                    "image_position",
+                    "image_width",
+                    "image_height",
+                    "image_fit",
+                    "image_loading",
+                    "extra_css_classes",
+                    "html_id",
+                ),
+                "classes": (
+                    "collapse",
+                ),
+            },
+        ),
+    )
 
 
 @admin.register(Page)
@@ -209,6 +249,8 @@ class RedirectAdmin(admin.ModelAdmin):
 
 @admin.register(PageBlock)
 class PageBlockAdmin(admin.ModelAdmin):
+    form = PageBlockAdminForm
+
     list_display = (
         "page",
         "block_type",
@@ -216,16 +258,65 @@ class PageBlockAdmin(admin.ModelAdmin):
         "is_active",
         "updated_at",
     )
+
     list_filter = (
         "block_type",
         "is_active",
     )
+
     search_fields = (
         "page__title",
     )
+
     ordering = (
         "page",
         "position",
+    )
+
+    fieldsets = (
+        (
+            "Block",
+            {
+                "fields": (
+                    "page",
+                    "block_type",
+                    "position",
+                    "is_active",
+                )
+            },
+        ),
+        (
+            "Hero – Inhalt",
+            {
+                "fields": (
+                    "eyebrow",
+                    "headline",
+                    "text",
+                    "button_label",
+                    "button_url",
+                    "media",
+                )
+            },
+        ),
+        (
+            "Hero – Erweitert",
+            {
+                "fields": (
+                    "variant",
+                    "content_alignment",
+                    "image_position",
+                    "image_width",
+                    "image_height",
+                    "image_fit",
+                    "image_loading",
+                    "extra_css_classes",
+                    "html_id",
+                ),
+                "classes": (
+                    "collapse",
+                ),
+            },
+        ),
     )
 
 

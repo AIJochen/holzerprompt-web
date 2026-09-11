@@ -1,0 +1,52 @@
+.hp-hero {
+    padding-block: 4rem;
+}
+
+.hp-hero__eyebrow {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.hp-hero__headline {
+    margin-bottom: 1rem;
+}
+
+.hp-hero__text {
+    margin-bottom: 1.5rem;
+}
+
+.hp-hero__image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.hp-hero__image--cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hp-hero__image--contain {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hp-hero__image--original {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.hp-hero--align-center {
+    text-align: center;
+}
+
+.hp-hero--large {
+    padding-block: 6rem;
+}
+
+.hp-hero--compact {
+    padding-block: 2rem;
+}
