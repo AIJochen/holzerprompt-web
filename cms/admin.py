@@ -18,6 +18,9 @@ class PageBlockInline(admin.StackedInline):
     extra = 0
     ordering = ("position",)
 
+    class Media:
+        js = ("cms/js/pageblock_admin.js",)
+
     fieldsets = (
         (
             "Block",
@@ -26,7 +29,7 @@ class PageBlockInline(admin.StackedInline):
                     "block_type",
                     "position",
                     "is_active",
-                )
+                ),
             },
         ),
         (
@@ -39,7 +42,8 @@ class PageBlockInline(admin.StackedInline):
                     "button_label",
                     "button_url",
                     "media",
-                )
+                ),
+                "classes": ("hero-fields",),
             },
         ),
         (
@@ -53,12 +57,40 @@ class PageBlockInline(admin.StackedInline):
                     "image_height",
                     "image_fit",
                     "image_loading",
+                ),
+                "classes": ("collapse", "hero-fields"),
+            },
+        ),
+        (
+            "Rich Text – Inhalt",
+            {
+                "fields": (
+                    "rich_heading",
+                    "rich_lead",
+                    "rich_content",
+                ),
+                "classes": ("rich-text-fields",),
+            },
+        ),
+        (
+            "Rich Text – Erweitert",
+            {
+                "fields": (
+                    "rich_variant",
+                    "rich_text_width",
+                    "rich_alignment",
+                ),
+                "classes": ("collapse", "rich-text-fields"),
+            },
+        ),
+        (
+            "Technisch",
+            {
+                "fields": (
                     "extra_css_classes",
                     "html_id",
                 ),
-                "classes": (
-                    "collapse",
-                ),
+                "classes": ("collapse",),
             },
         ),
     )
@@ -251,6 +283,9 @@ class RedirectAdmin(admin.ModelAdmin):
 class PageBlockAdmin(admin.ModelAdmin):
     form = PageBlockAdminForm
 
+    class Media:
+        js = ("cms/js/pageblock_admin.js",)
+
     list_display = (
         "page",
         "block_type",
@@ -282,7 +317,7 @@ class PageBlockAdmin(admin.ModelAdmin):
                     "block_type",
                     "position",
                     "is_active",
-                )
+                ),
             },
         ),
         (
@@ -295,7 +330,8 @@ class PageBlockAdmin(admin.ModelAdmin):
                     "button_label",
                     "button_url",
                     "media",
-                )
+                ),
+                "classes": ("hero-fields",),
             },
         ),
         (
@@ -309,12 +345,40 @@ class PageBlockAdmin(admin.ModelAdmin):
                     "image_height",
                     "image_fit",
                     "image_loading",
+                ),
+                "classes": ("collapse", "hero-fields"),
+            },
+        ),
+        (
+            "Rich Text – Inhalt",
+            {
+                "fields": (
+                    "rich_heading",
+                    "rich_lead",
+                    "rich_content",
+                ),
+                "classes": ("rich-text-fields",),
+            },
+        ),
+        (
+            "Rich Text – Erweitert",
+            {
+                "fields": (
+                    "rich_variant",
+                    "rich_text_width",
+                    "rich_alignment",
+                ),
+                "classes": ("collapse", "rich-text-fields"),
+            },
+        ),
+        (
+            "Technisch",
+            {
+                "fields": (
                     "extra_css_classes",
                     "html_id",
                 ),
-                "classes": (
-                    "collapse",
-                ),
+                "classes": ("collapse",),
             },
         ),
     )

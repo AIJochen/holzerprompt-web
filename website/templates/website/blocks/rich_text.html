@@ -1,0 +1,30 @@
+<section
+    {% if block.data.html_id %}id="{{ block.data.html_id }}"{% endif %}
+    class="
+        hp-richtext
+        {% if block.data.variant %}hp-richtext--{{ block.data.variant }}{% endif %}
+        {% if block.data.text_width %}hp-richtext--width-{{ block.data.text_width }}{% endif %}
+        {% if block.data.alignment %}hp-richtext--align-{{ block.data.alignment }}{% endif %}
+        {% if block.data.extra_css_classes %}{{ block.data.extra_css_classes }}{% endif %}
+    "
+>
+    <div class="container">
+        <div class="hp-richtext__inner">
+
+            {% if block.data.heading %}
+                <h2 class="hp-richtext__heading">{{ block.data.heading }}</h2>
+            {% endif %}
+
+            {% if block.data.lead %}
+                <p class="hp-richtext__lead">{{ block.data.lead }}</p>
+            {% endif %}
+
+            {% if block.data.content %}
+                <div class="hp-richtext__content">
+                    {{ block.data.content|safe }}
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</section>

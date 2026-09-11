@@ -43,6 +43,8 @@
 
             {% if block.block_type == "hero" %}
                 {% include "website/blocks/hero.html" %}
+            {% elif block.block_type == "rich_text" %}
+                {% include "website/blocks/rich_text.html" %}
             {% else %}
                 <p>
                     Blocktyp „{{ block.block_type }}“ ist noch nicht implementiert.

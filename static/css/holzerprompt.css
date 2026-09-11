@@ -50,3 +50,52 @@
 .hp-hero--compact {
     padding-block: 2rem;
 }
+
+.hp-richtext {
+    padding-block: 3rem;
+}
+
+.hp-richtext__inner {
+    margin-inline: auto;
+}
+
+.hp-richtext__heading {
+    margin-bottom: 1rem;
+}
+
+.hp-richtext__lead {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.hp-richtext__content> :last-child {
+    margin-bottom: 0;
+}
+
+.hp-richtext__content blockquote {
+    margin-block: 1.5rem;
+    padding-left: 1rem;
+    border-left: 0.25rem solid currentColor;
+}
+
+.hp-richtext--width-narrow .hp-richtext__inner {
+    max-width: 48rem;
+}
+
+.hp-richtext--width-wide .hp-richtext__inner {
+    max-width: 70rem;
+}
+
+.hp-richtext--align-center {
+    text-align: center;
+}
+
+.hp-richtext--highlighted .hp-richtext__inner {
+    padding: 2rem;
+    background: var(--bs-light);
+    border-radius: var(--bs-border-radius-lg);
+}
+
+.hp-richtext--muted {
+    color: var(--bs-secondary-color);
+}
