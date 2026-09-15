@@ -3,13 +3,88 @@ from .forms import PageBlockAdminForm
 
 from .models import (
     KnowledgeArticle,
+    Language,
     MediaAsset,
     Navigation,
     NavigationItem,
     Page,
     PageBlock,
     Redirect,
+    Site,
+    SiteLanguage,
 )
+
+
+@admin.register(Language)
+class LanguageAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "native_name",
+        "code",
+        "is_active",
+    )
+    list_filter = (
+        "is_active",
+    )
+    search_fields = (
+        "name",
+        "native_name",
+        "code",
+    )
+    ordering = (
+        "name",
+    )
+
+
+@admin.register(Site)
+class SiteAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "domain",
+        "is_active",
+        "updated_at",
+    )
+    list_filter = (
+        "is_active",
+    )
+    search_fields = (
+        "name",
+        "domain",
+    )
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+
+@admin.register(SiteLanguage)
+class SiteLanguageAdmin(admin.ModelAdmin):
+    list_display = (
+        "site",
+        "language",
+        "is_default",
+        "url_prefix",
+        "position",
+        "is_active",
+    )
+    list_filter = (
+        "site",
+        "language",
+        "is_default",
+        "is_active",
+    )
+    search_fields = (
+        "site__name",
+        "site__domain",
+        "language__name",
+        "language__native_name",
+        "language__code",
+    )
+    ordering = (
+        "site",
+        "position",
+        "language",
+    )
 
 
 class PageBlockInline(admin.StackedInline):

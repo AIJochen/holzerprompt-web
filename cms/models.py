@@ -8,6 +8,91 @@ class PublishStatus(models.TextChoices):
     PUBLISHED = "published", "Veröffentlicht"
 
 
+class Language(models.Model):
+    code = models.CharField(
+        "Sprachcode", max_length=10, unique=True,
+        help_text="Zum Beispiel de, en, fr oder es.",
+    )
+    name = models.CharField(
+        "Name", max_length=100,
+        help_text="Deutsche Bezeichnung der Sprache, zum Beispiel Englisch.",
+    )
+    native_name = models.CharField(
+        "Eigenbezeichnung", max_length=100,
+        help_text="Bezeichnung in der jeweiligen Sprache, zum Beispiel English.",
+    )
+    is_active = models.BooleanField("Aktiv", default=True)
+
+    class Meta:
+        verbose_name = "Sprache"
+        verbose_name_plural = "Sprachen"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class Site(models.Model):
+    name = models.CharField("Name", max_length=150)
+    domain = models.CharField(
+        "Domain", max_length=255, unique=True,
+        help_text="Domain ohne Protokoll und Pfad, zum Beispiel holzerprompt.de.",
+    )
+    is_active = models.BooleanField("Aktiv", default=True)
+    created_at = models.DateTimeField("Erstellt", auto_now_add=True)
+    updated_at = models.DateTimeField("Geändert", auto_now=True)
+
+    class Meta:
+        verbose_name = "Website"
+        verbose_name_plural = "Websites"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.domain})"
+
+
+class SiteLanguage(models.Model):
+    site = models.ForeignKey(
+        Site, verbose_name="Website", on_delete=models.CASCADE,
+        related_name="site_languages",
+    )
+    language = models.ForeignKey(
+        Language, verbose_name="Sprache", on_delete=models.PROTECT,
+        related_name="site_languages",
+    )
+    is_default = models.BooleanField("Standardsprache", default=False)
+    is_active = models.BooleanField("Aktiv", default=True)
+    url_prefix = models.SlugField(
+        "URL-Präfix", max_length=20, blank=True,
+        help_text="Leer für die Standardsprache; für weitere Sprachen zum Beispiel fr oder es.",
+    )
+    position = models.PositiveIntegerField("Position", default=0)
+
+    class Meta:
+        verbose_name = "Website-Sprache"
+        verbose_name_plural = "Website-Sprachen"
+        ordering = ["site__name", "position", "language__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["site", "language"],
+                name="unique_language_per_site",
+            ),
+            models.UniqueConstraint(
+                fields=["site", "url_prefix"],
+                name="unique_url_prefix_per_site",
+            ),
+            models.UniqueConstraint(
+                fields=["site"],
+                condition=models.Q(is_default=True),
+                name="unique_default_language_per_site",
+            ),
+        ]
+
+    def __str__(self):
+        default_label = " – Standard" if self.is_default else ""
+        return f"{self.site.domain}: {self.language.code}{default_label}"
+
+
 class MediaAsset(models.Model):
     class MediaType(models.TextChoices):
         IMAGE = "image", "Bild"
