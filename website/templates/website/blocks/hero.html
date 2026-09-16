@@ -27,31 +27,31 @@
 
             <div class="col-12 col-lg-6">
 
-                {% if block.data.eyebrow %}
+                {% if block_translation.data.eyebrow %}
                     <p class="hp-hero__eyebrow">
-                        {{ block.data.eyebrow }}
+                        {{ block_translation.data.eyebrow }}
                     </p>
                 {% endif %}
 
-                {% if block.data.headline %}
+                {% if block_translation.data.headline %}
                     <h1 class="hp-hero__headline">
-                        {{ block.data.headline }}
+                        {{ block_translation.data.headline }}
                     </h1>
                 {% endif %}
 
-                {% if block.data.text %}
+                {% if block_translation.data.text %}
                     <p class="hp-hero__text">
-                        {{ block.data.text }}
+                        {{ block_translation.data.text }}
                     </p>
                 {% endif %}
 
-                {% if block.data.button_label and block.data.button_url %}
+                {% if block_translation.data.button_label and block.data.button_url %}
                     <p class="hp-hero__cta">
                         <a
                             class="btn btn-primary"
                             href="{{ block.data.button_url }}"
                         >
-                            {{ block.data.button_label }}
+                            {{ block_translation.data.button_label }}
                         </a>
                     </p>
                 {% endif %}

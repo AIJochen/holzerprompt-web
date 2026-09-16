@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .forms import PageBlockAdminForm
+from .forms import PageBlockAdminForm, PageBlockTranslationAdminForm
 
 from .models import (
     KnowledgeArticle,
@@ -9,6 +9,8 @@ from .models import (
     NavigationItem,
     Page,
     PageBlock,
+    PageBlockTranslation,
+    PageTranslation,
     Redirect,
     Site,
     SiteLanguage,
@@ -108,13 +110,9 @@ class PageBlockInline(admin.StackedInline):
             },
         ),
         (
-            "Hero – Inhalt",
+            "Hero – Struktur",
             {
                 "fields": (
-                    "eyebrow",
-                    "headline",
-                    "text",
-                    "button_label",
                     "button_url",
                     "media",
                 ),
@@ -134,17 +132,6 @@ class PageBlockInline(admin.StackedInline):
                     "image_loading",
                 ),
                 "classes": ("collapse", "hero-fields"),
-            },
-        ),
-        (
-            "Rich Text – Inhalt",
-            {
-                "fields": (
-                    "rich_heading",
-                    "rich_lead",
-                    "rich_content",
-                ),
-                "classes": ("rich-text-fields",),
             },
         ),
         (
@@ -171,76 +158,55 @@ class PageBlockInline(admin.StackedInline):
     )
 
 
-@admin.register(Page)
-class PageAdmin(admin.ModelAdmin):
-    list_display = (
-        "title",
-        "slug",
-        "parent",
-        "template_type",
-        "status",
-        "updated_at",
+class PageTranslationInline(admin.StackedInline):
+    model = PageTranslation
+    extra = 0
+    ordering = ("site_language", "title")
+    fields = (
+        "site_language", "title", "slug", "status",
+        "meta_title", "meta_description", "canonical_url",
+        "robots_index", "robots_follow", "published_at",
     )
-    list_filter = (
-        "status",
-        "template_type",
-        "robots_index",
-        "robots_follow",
-    )
+    readonly_fields = ("published_at",)
+
+
+@admin.register(PageTranslation)
+class PageTranslationAdmin(admin.ModelAdmin):
+    list_display = ("page", "site_language", "title", "slug", "status", "updated_at")
+    list_filter = ("site_language", "status", "robots_index", "robots_follow")
     search_fields = (
-        "title",
-        "slug",
-        "meta_title",
-        "meta_description",
+        "page__internal_name", "title", "slug", "meta_title", "meta_description",
     )
-    prepopulated_fields = {
-        "slug": ("title",),
-    }
-    readonly_fields = (
-        "created_at",
-        "updated_at",
-        "published_at",
-    )
-    inlines = [
-        PageBlockInline,
-    ]
+    readonly_fields = ("created_at", "updated_at", "published_at")
+    ordering = ("site_language", "title")
 
     fieldsets = (
-        (
-            "Seite",
-            {
-                "fields": (
-                    "title",
-                    "slug",
-                    "parent",
-                    "status",
-                    "template_type",
-                )
-            },
-        ),
-        (
-            "SEO",
-            {
-                "fields": (
-                    "meta_title",
-                    "meta_description",
-                    "canonical_url",
-                    "robots_index",
-                    "robots_follow",
-                )
-            },
-        ),
-        (
-            "Zeitstempel",
-            {
-                "fields": (
-                    "created_at",
-                    "updated_at",
-                    "published_at",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
+        ("Sprachversion", {"fields": ("page", "site_language", "title", "slug", "status")}),
+        ("SEO", {"fields": (
+            "meta_title", "meta_description", "canonical_url",
+            "robots_index", "robots_follow",
+        )}),
+        ("Zeitstempel", {
+            "fields": ("created_at", "updated_at", "published_at"),
+            "classes": ("collapse",),
+        }),
+    )
+
+
+@admin.register(Page)
+class PageAdmin(admin.ModelAdmin):
+    list_display = ("internal_name", "parent", "template_type", "updated_at")
+    list_filter = ("template_type",)
+    search_fields = ("internal_name", "translations__title", "translations__slug")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = [PageTranslationInline, PageBlockInline]
+
+    fieldsets = (
+        ("Seite", {"fields": ("internal_name", "parent", "template_type")}),
+        ("Zeitstempel", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
     )
 
 
@@ -354,6 +320,101 @@ class RedirectAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(PageBlockTranslation)
+class PageBlockTranslationAdmin(admin.ModelAdmin):
+    form = PageBlockTranslationAdminForm
+
+    list_display = (
+        "page_block",
+        "site_language",
+        "updated_at",
+    )
+    list_filter = (
+        "site_language",
+        "page_block__block_type",
+    )
+    search_fields = (
+        "page_block__page__internal_name",
+        "page_block__page__translations__title",
+    )
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+    ordering = (
+        "page_block",
+        "site_language",
+    )
+
+    fieldsets = (
+        (
+            "Zuordnung",
+            {
+                "fields": (
+                    "page_block",
+                    "site_language",
+                )
+            },
+        ),
+        (
+            "Hero – Sprachinhalt",
+            {
+                "fields": (
+                    "eyebrow",
+                    "headline",
+                    "text",
+                    "button_label",
+                ),
+                "classes": ("hero-translation-fields",),
+            },
+        ),
+        (
+            "Rich Text – Sprachinhalt",
+            {
+                "fields": (
+                    "rich_heading",
+                    "rich_lead",
+                    "rich_content",
+                ),
+                "classes": ("rich-text-translation-fields",),
+            },
+        ),
+        (
+            "Zeitstempel",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
+    )
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = list(super().get_fieldsets(request, obj))
+
+        if obj is None or not obj.page_block_id:
+            return fieldsets
+
+        block_type = obj.page_block.block_type
+
+        if block_type == PageBlock.BlockType.HERO:
+            hidden_class = "rich-text-translation-fields"
+        elif block_type == PageBlock.BlockType.RICH_TEXT:
+            hidden_class = "hero-translation-fields"
+        else:
+            hidden_class = None
+
+        if hidden_class:
+            fieldsets = [
+                fieldset
+                for fieldset in fieldsets
+                if hidden_class not in fieldset[1].get("classes", ())
+            ]
+
+        return fieldsets
+
+
 @admin.register(PageBlock)
 class PageBlockAdmin(admin.ModelAdmin):
     form = PageBlockAdminForm
@@ -375,7 +436,8 @@ class PageBlockAdmin(admin.ModelAdmin):
     )
 
     search_fields = (
-        "page__title",
+        "page__internal_name",
+        "page__translations__title",
     )
 
     ordering = (
@@ -396,13 +458,9 @@ class PageBlockAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Hero – Inhalt",
+            "Hero – Struktur",
             {
                 "fields": (
-                    "eyebrow",
-                    "headline",
-                    "text",
-                    "button_label",
                     "button_url",
                     "media",
                 ),
@@ -422,17 +480,6 @@ class PageBlockAdmin(admin.ModelAdmin):
                     "image_loading",
                 ),
                 "classes": ("collapse", "hero-fields"),
-            },
-        ),
-        (
-            "Rich Text – Inhalt",
-            {
-                "fields": (
-                    "rich_heading",
-                    "rich_lead",
-                    "rich_content",
-                ),
-                "classes": ("rich-text-fields",),
             },
         ),
         (
@@ -474,6 +521,7 @@ class NavigationItemAdmin(admin.ModelAdmin):
     )
     search_fields = (
         "label",
-        "page__title",
+        "page__internal_name",
+        "page__translations__title",
         "external_url",
     )

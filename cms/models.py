@@ -172,14 +172,14 @@ class Page(models.Model):
         STANDARD = "standard", "Standardseite"
         LANDING = "landing", "Landingpage"
 
-    title = models.CharField(
-        "Titel",
+    internal_name = models.CharField(
+        "Interne Bezeichnung",
         max_length=200,
-    )
-
-    slug = models.SlugField(
-        "Slug",
-        max_length=200,
+        default="",
+        help_text=(
+            "Dient ausschließlich zur Identifikation und Strukturierung der Seite "
+            "im CMS. Wird nicht auf der Website ausgegeben und nicht übersetzt."
+        ),
     )
 
     parent = models.ForeignKey(
@@ -191,45 +191,11 @@ class Page(models.Model):
         related_name="children",
     )
 
-    status = models.CharField(
-        "Status",
-        max_length=20,
-        choices=PublishStatus.choices,
-        default=PublishStatus.DRAFT,
-    )
-
     template_type = models.CharField(
         "Seitentyp",
         max_length=30,
         choices=TemplateType.choices,
         default=TemplateType.STANDARD,
-    )
-
-    meta_title = models.CharField(
-        "Meta-Titel",
-        max_length=200,
-        blank=True,
-    )
-
-    meta_description = models.CharField(
-        "Meta-Beschreibung",
-        max_length=320,
-        blank=True,
-    )
-
-    canonical_url = models.URLField(
-        "Canonical URL",
-        blank=True,
-    )
-
-    robots_index = models.BooleanField(
-        "Indexierung erlauben",
-        default=True,
-    )
-
-    robots_follow = models.BooleanField(
-        "Links folgen erlauben",
-        default=True,
     )
 
     created_at = models.DateTimeField(
@@ -242,6 +208,51 @@ class Page(models.Model):
         auto_now=True,
     )
 
+    class Meta:
+        verbose_name = "Seite"
+        verbose_name_plural = "Seiten"
+        ordering = ["internal_name"]
+
+    def __str__(self):
+        return self.internal_name or f"Seite {self.pk}"
+
+
+class PageTranslation(models.Model):
+    page = models.ForeignKey(
+        Page,
+        verbose_name="Seite",
+        on_delete=models.CASCADE,
+        related_name="translations",
+    )
+
+    site_language = models.ForeignKey(
+        SiteLanguage,
+        verbose_name="Website-Sprache",
+        on_delete=models.PROTECT,
+        related_name="page_translations",
+    )
+
+    title = models.CharField("Titel", max_length=200)
+    slug = models.SlugField("Slug", max_length=200)
+
+    status = models.CharField(
+        "Status",
+        max_length=20,
+        choices=PublishStatus.choices,
+        default=PublishStatus.DRAFT,
+    )
+
+    meta_title = models.CharField("Meta-Titel", max_length=200, blank=True)
+    meta_description = models.CharField(
+        "Meta-Beschreibung", max_length=320, blank=True
+    )
+    canonical_url = models.URLField("Canonical URL", blank=True)
+
+    robots_index = models.BooleanField("Indexierung erlauben", default=True)
+    robots_follow = models.BooleanField("Links folgen erlauben", default=True)
+
+    created_at = models.DateTimeField("Erstellt", auto_now_add=True)
+    updated_at = models.DateTimeField("Geändert", auto_now=True)
     published_at = models.DateTimeField(
         "Veröffentlicht am",
         null=True,
@@ -249,18 +260,22 @@ class Page(models.Model):
     )
 
     class Meta:
-        verbose_name = "Seite"
-        verbose_name_plural = "Seiten"
-        ordering = ["title"]
+        verbose_name = "Seitenübersetzung"
+        verbose_name_plural = "Seitenübersetzungen"
+        ordering = ["site_language", "title"]
         constraints = [
             models.UniqueConstraint(
-                fields=["parent", "slug"],
-                name="unique_page_slug_per_parent",
+                fields=["page", "site_language"],
+                name="unique_page_translation_per_site_language",
+            ),
+            models.UniqueConstraint(
+                fields=["site_language", "slug"],
+                name="unique_page_translation_slug_per_site_language",
             ),
         ]
 
     def __str__(self):
-        return self.title
+        return f"{self.page.internal_name}: {self.site_language} – {self.title}"
 
     def save(self, *args, **kwargs):
         if (
@@ -270,17 +285,6 @@ class Page(models.Model):
             self.published_at = timezone.now()
 
         super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        parts = [self.slug]
-
-        parent = self.parent
-
-        while parent:
-            parts.insert(0, parent.slug)
-            parent = parent.parent
-
-        return "/" + "/".join(parts) + "/"
 
 
 class PageBlock(models.Model):
@@ -350,7 +354,61 @@ class PageBlock(models.Model):
         ordering = ["position", "id"]
 
     def __str__(self):
-        return f"{self.page.title}: {self.get_block_type_display()}"
+        page_label = self.page.internal_name or f"Seite {self.page_id}"
+        return f"{page_label}: {self.get_block_type_display()}"
+
+
+class PageBlockTranslation(models.Model):
+    page_block = models.ForeignKey(
+        PageBlock,
+        verbose_name="Seitenblock",
+        on_delete=models.CASCADE,
+        related_name="translations",
+    )
+
+    site_language = models.ForeignKey(
+        SiteLanguage,
+        verbose_name="Website-Sprache",
+        on_delete=models.PROTECT,
+        related_name="page_block_translations",
+    )
+
+    data = models.JSONField(
+        "Übersetzte Blockinhalte",
+        default=dict,
+        blank=True,
+        help_text=(
+            "Sprachabhängige Inhalte des Blocks. "
+            "Die erlaubten Felder werden durch den jeweiligen Blocktyp bestimmt."
+        ),
+    )
+
+    created_at = models.DateTimeField(
+        "Erstellt",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        "Geändert",
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = "Seitenblock-Übersetzung"
+        verbose_name_plural = "Seitenblock-Übersetzungen"
+        ordering = ["page_block", "site_language"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["page_block", "site_language"],
+                name="unique_page_block_translation_per_site_language",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.page_block} – "
+            f"{self.site_language}"
+        )
 
 
 class Navigation(models.Model):
@@ -429,12 +487,6 @@ class NavigationItem(models.Model):
     def __str__(self):
         return self.label
 
-    @property
-    def url(self):
-        if self.page:
-            return self.page.get_absolute_url()
-
-        return self.external_url
 
 
 class KnowledgeArticle(models.Model):

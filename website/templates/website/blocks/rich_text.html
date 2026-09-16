@@ -11,17 +11,21 @@
     <div class="container">
         <div class="hp-richtext__inner">
 
-            {% if block.data.heading %}
-                <h2 class="hp-richtext__heading">{{ block.data.heading }}</h2>
+            {% if block_translation.data.heading %}
+                <h2 class="hp-richtext__heading">
+                    {{ block_translation.data.heading }}
+                </h2>
             {% endif %}
 
-            {% if block.data.lead %}
-                <p class="hp-richtext__lead">{{ block.data.lead }}</p>
+            {% if block_translation.data.lead %}
+                <p class="hp-richtext__lead">
+                    {{ block_translation.data.lead }}
+                </p>
             {% endif %}
 
-            {% if block.data.content %}
+            {% if block_translation.data.content %}
                 <div class="hp-richtext__content">
-                    {{ block.data.content|safe }}
+                    {{ block_translation.data.content|safe }}
                 </div>
             {% endif %}
 

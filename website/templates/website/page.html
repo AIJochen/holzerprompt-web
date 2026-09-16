@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ site_language.language.code }}">
 <head>
     <meta charset="UTF-8">
 
@@ -10,17 +10,17 @@
     >
 
     <title>
-        {% if page.meta_title %}
-            {{ page.meta_title }}
+        {% if page_translation.meta_title %}
+            {{ page_translation.meta_title }}
         {% else %}
-            {{ page.title }}
+            {{ page_translation.title }}
         {% endif %}
     </title>
 
-    {% if page.meta_description %}
+    {% if page_translation.meta_description %}
         <meta
             name="description"
-            content="{{ page.meta_description }}"
+            content="{{ page_translation.meta_description }}"
         >
     {% endif %}
 
@@ -37,9 +37,9 @@
 
 <body>
 
-    {% for block in page.blocks.all %}
+    {% for item in blocks %}
 
-        {% if block.is_active %}
+        {% with block=item.block block_translation=item.translation %}
 
             {% if block.block_type == "hero" %}
                 {% include "website/blocks/hero.html" %}
@@ -51,7 +51,7 @@
                 </p>
             {% endif %}
 
-        {% endif %}
+        {% endwith %}
 
     {% endfor %}
 

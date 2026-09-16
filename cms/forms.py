@@ -4,7 +4,7 @@ import bleach
 from django import forms
 from django.core.validators import URLValidator
 
-from .models import PageBlock
+from .models import PageBlock, PageBlockTranslation
 
 
 HERO_VARIANT_CHOICES = [
@@ -85,26 +85,8 @@ RICH_TEXT_ALLOWED_PROTOCOLS = [
 ]
 
 
-class PageBlockAdminForm(forms.ModelForm):
-    # Hero
-    eyebrow = forms.CharField(required=False, label="Eyebrow")
-
-    headline = forms.CharField(
-        required=False,
-        label="Überschrift",
-    )
-
-    text = forms.CharField(
-        required=False,
-        label="Text",
-        widget=forms.Textarea(attrs={"rows": 4}),
-    )
-
-    button_label = forms.CharField(
-        required=False,
-        label="Button-Beschriftung",
-    )
-
+class PageBlockStructureAdminForm(forms.ModelForm):
+    # Hero – Struktur
     button_url = forms.CharField(
         required=False,
         label="Button-Ziel",
@@ -152,38 +134,7 @@ class PageBlockAdminForm(forms.ModelForm):
         choices=IMAGE_LOADING_CHOICES,
     )
 
-    # Rich Text
-    rich_heading = forms.CharField(
-        required=False,
-        label="Überschrift",
-    )
-
-    rich_lead = forms.CharField(
-        required=False,
-        label="Einleitung / Lead",
-        widget=forms.Textarea(attrs={"rows": 3}),
-    )
-
-    rich_content = forms.CharField(
-        required=False,
-        label="Textinhalt",
-        widget=forms.Textarea(
-            attrs={
-                "rows": 16,
-                "class": "vLargeTextField",
-                "placeholder": (
-                    "<p>Text ...</p>\n"
-                    "<h3>Zwischenüberschrift</h3>\n"
-                    "<p>Weiterer Text ...</p>"
-                ),
-            }
-        ),
-        help_text=(
-            "Erlaubt: p, h3, h4, strong, em, a, ul, ol, li, "
-            "blockquote und br."
-        ),
-    )
-
+    # Rich Text – Struktur
     rich_variant = forms.ChoiceField(
         required=False,
         label="Darstellungsvariante",
@@ -214,11 +165,7 @@ class PageBlockAdminForm(forms.ModelForm):
         help_text="Ohne führendes # eingeben.",
     )
 
-    HERO_DATA_FIELDS = [
-        "eyebrow",
-        "headline",
-        "text",
-        "button_label",
+    HERO_STRUCTURAL_FIELDS = [
         "button_url",
         "variant",
         "content_alignment",
@@ -231,10 +178,7 @@ class PageBlockAdminForm(forms.ModelForm):
         "html_id",
     ]
 
-    RICH_TEXT_FIELD_MAP = {
-        "rich_heading": "heading",
-        "rich_lead": "lead",
-        "rich_content": "content",
+    RICH_TEXT_STRUCTURAL_FIELD_MAP = {
         "rich_variant": "variant",
         "rich_text_width": "text_width",
         "rich_alignment": "alignment",
@@ -261,12 +205,12 @@ class PageBlockAdminForm(forms.ModelForm):
         data = self.instance.data or {}
 
         if self.instance.block_type == PageBlock.BlockType.HERO:
-            for field_name in self.HERO_DATA_FIELDS:
+            for field_name in self.HERO_STRUCTURAL_FIELDS:
                 if field_name in self.fields:
                     self.fields[field_name].initial = data.get(field_name, "")
 
         elif self.instance.block_type == PageBlock.BlockType.RICH_TEXT:
-            for form_field, data_key in self.RICH_TEXT_FIELD_MAP.items():
+            for form_field, data_key in self.RICH_TEXT_STRUCTURAL_FIELD_MAP.items():
                 if form_field in self.fields:
                     self.fields[form_field].initial = data.get(data_key, "")
 
@@ -319,54 +263,12 @@ class PageBlockAdminForm(forms.ModelForm):
 
         return value
 
-    def clean_rich_content(self):
-        value = (self.cleaned_data.get("rich_content") or "").strip()
-
-        if not value:
-            return ""
-
-        return bleach.clean(
-            value,
-            tags=RICH_TEXT_ALLOWED_TAGS,
-            attributes=RICH_TEXT_ALLOWED_ATTRIBUTES,
-            protocols=RICH_TEXT_ALLOWED_PROTOCOLS,
-            strip=True,
-        )
-
     def clean(self):
         cleaned_data = super().clean()
         block_type = cleaned_data.get("block_type")
 
         if block_type == PageBlock.BlockType.HERO:
-            if not (cleaned_data.get("headline") or "").strip():
-                self.add_error(
-                    "headline",
-                    "Die Überschrift ist erforderlich.",
-                )
-
-            button_label = (cleaned_data.get("button_label") or "").strip()
-            button_url = (cleaned_data.get("button_url") or "").strip()
-
-            if bool(button_label) != bool(button_url):
-                message = (
-                    "Button-Beschriftung und Button-Ziel müssen gemeinsam "
-                    "angegeben werden."
-                )
-
-                if not button_label:
-                    self.add_error("button_label", message)
-
-                if not button_url:
-                    self.add_error("button_url", message)
-
             self._complete_image_dimensions(cleaned_data)
-
-        elif block_type == PageBlock.BlockType.RICH_TEXT:
-            if not (cleaned_data.get("rich_content") or "").strip():
-                self.add_error(
-                    "rich_content",
-                    "Der Textinhalt ist erforderlich.",
-                )
 
         return cleaned_data
 
@@ -416,14 +318,14 @@ class PageBlockAdminForm(forms.ModelForm):
         if block_type == PageBlock.BlockType.HERO:
             instance.data = {
                 field_name: self.cleaned_data.get(field_name)
-                for field_name in self.HERO_DATA_FIELDS
+                for field_name in self.HERO_STRUCTURAL_FIELDS
                 if self.cleaned_data.get(field_name) not in (None, "")
             }
 
         elif block_type == PageBlock.BlockType.RICH_TEXT:
             instance.data = {
                 data_key: self.cleaned_data.get(form_field)
-                for form_field, data_key in self.RICH_TEXT_FIELD_MAP.items()
+                for form_field, data_key in self.RICH_TEXT_STRUCTURAL_FIELD_MAP.items()
                 if self.cleaned_data.get(form_field) not in (None, "")
             }
 
@@ -432,3 +334,142 @@ class PageBlockAdminForm(forms.ModelForm):
             self.save_m2m()
 
         return instance
+
+
+class PageBlockTranslationAdminForm(forms.ModelForm):
+    eyebrow = forms.CharField(required=False, label="Eyebrow")
+    headline = forms.CharField(required=False, label="Überschrift")
+    text = forms.CharField(
+        required=False,
+        label="Text",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+    button_label = forms.CharField(
+        required=False,
+        label="Button-Beschriftung",
+    )
+
+    rich_heading = forms.CharField(required=False, label="Überschrift")
+    rich_lead = forms.CharField(
+        required=False,
+        label="Einleitung / Lead",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    rich_content = forms.CharField(
+        required=False,
+        label="Textinhalt",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 16,
+                "class": "vLargeTextField",
+                "placeholder": (
+                    "<p>Text ...</p>\n"
+                    "<h3>Zwischenüberschrift</h3>\n"
+                    "<p>Weiterer Text ...</p>"
+                ),
+            }
+        ),
+        help_text=(
+            "Erlaubt: p, h3, h4, strong, em, a, ul, ol, li, "
+            "blockquote und br."
+        ),
+    )
+
+    class Meta:
+        model = PageBlockTranslation
+        fields = (
+            "page_block",
+            "site_language",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.instance or not self.instance.pk:
+            return
+
+        data = self.instance.data or {}
+        block_type = self.instance.page_block.block_type
+
+        if block_type == PageBlock.BlockType.HERO:
+            for field_name in ("eyebrow", "headline", "text", "button_label"):
+                self.fields[field_name].initial = data.get(field_name, "")
+
+        elif block_type == PageBlock.BlockType.RICH_TEXT:
+            self.fields["rich_heading"].initial = data.get("heading", "")
+            self.fields["rich_lead"].initial = data.get("lead", "")
+            self.fields["rich_content"].initial = data.get("content", "")
+
+    def clean_rich_content(self):
+        value = (self.cleaned_data.get("rich_content") or "").strip()
+
+        if not value:
+            return ""
+
+        return bleach.clean(
+            value,
+            tags=RICH_TEXT_ALLOWED_TAGS,
+            attributes=RICH_TEXT_ALLOWED_ATTRIBUTES,
+            protocols=RICH_TEXT_ALLOWED_PROTOCOLS,
+            strip=True,
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        page_block = cleaned_data.get("page_block") or getattr(
+            self.instance,
+            "page_block",
+            None,
+        )
+
+        if not page_block:
+            return cleaned_data
+
+        if page_block.block_type == PageBlock.BlockType.HERO:
+            if not (cleaned_data.get("headline") or "").strip():
+                self.add_error(
+                    "headline",
+                    "Die Überschrift ist erforderlich.",
+                )
+
+        elif page_block.block_type == PageBlock.BlockType.RICH_TEXT:
+            if not (cleaned_data.get("rich_content") or "").strip():
+                self.add_error(
+                    "rich_content",
+                    "Der Textinhalt ist erforderlich.",
+                )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        page_block = self.cleaned_data.get("page_block") or instance.page_block
+
+        if page_block.block_type == PageBlock.BlockType.HERO:
+            instance.data = {
+                field_name: self.cleaned_data.get(field_name)
+                for field_name in ("eyebrow", "headline", "text", "button_label")
+                if self.cleaned_data.get(field_name) not in (None, "")
+            }
+
+        elif page_block.block_type == PageBlock.BlockType.RICH_TEXT:
+            field_map = {
+                "rich_heading": "heading",
+                "rich_lead": "lead",
+                "rich_content": "content",
+            }
+            instance.data = {
+                data_key: self.cleaned_data.get(form_field)
+                for form_field, data_key in field_map.items()
+                if self.cleaned_data.get(form_field) not in (None, "")
+            }
+
+        if commit:
+            instance.save()
+            self.save_m2m()
+
+        return instance
+
+
+# Existing admin.py currently imports this name.
+PageBlockAdminForm = PageBlockStructureAdminForm
