@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.forms.models import BaseInlineFormSet
 from .forms import PageBlockAdminForm, PageBlockTranslationAdminForm
 
 from .models import (
@@ -160,8 +161,52 @@ class PageBlockInline(admin.StackedInline):
     )
 
 
+class PageTranslationInlineFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+
+        if any(self.errors):
+            return
+
+        parent = self.instance.parent
+
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data"):
+                continue
+
+            if form.cleaned_data.get("DELETE"):
+                continue
+
+            site_language = form.cleaned_data.get("site_language")
+            slug = form.cleaned_data.get("slug")
+
+            if not site_language or not slug:
+                continue
+
+            conflicting_translation = PageTranslation.objects.filter(
+                site_language=site_language,
+                slug=slug,
+                page__parent=parent,
+            )
+
+            if form.instance.pk:
+                conflicting_translation = conflicting_translation.exclude(
+                    pk=form.instance.pk
+                )
+
+            if conflicting_translation.exists():
+                form.add_error(
+                    "slug",
+                    (
+                        "Dieser Slug wird innerhalb derselben "
+                        "übergeordneten Seite bereits verwendet."
+                    ),
+                )
+
+
 class PageTranslationInline(admin.StackedInline):
     model = PageTranslation
+    formset = PageTranslationInlineFormSet
     extra = 0
     ordering = ("site_language", "title")
     fields = (

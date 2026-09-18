@@ -6,6 +6,6 @@ from . import views
 app_name = "website"
 
 urlpatterns = [
-    path("", views.home, name="home"),
-    path("<slug:language_prefix>/", views.home, name="localized_home"),
+    path("", views.page, name="home"),
+    path("<path:page_path>/", views.page, name="page"),
 ]

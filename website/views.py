@@ -7,34 +7,13 @@ from cms.models import (
     PageTranslation,
     PublishStatus,
 )
-from cms.services.site_resolver import resolve_site_context
+from cms.services.page_resolver import resolve_page
+from cms.services.site_resolver import resolve_request_path
 
 
-def home(request, language_prefix=""):
-    site_context = resolve_site_context(
-        request,
-        language_prefix=language_prefix,
-    )
+def _render_page(request, site_context, page_translation):
     site_language = site_context.site_language
-
-    if not site_language.home_page_id:
-        raise Http404(
-            "Keine Startseite für diese Website-Sprache konfiguriert."
-        )
-
-    page = site_language.home_page
-
-    page_translation = get_object_or_404(
-        PageTranslation.objects.select_related(
-            "page",
-            "site_language",
-            "site_language__site",
-            "site_language__language",
-        ),
-        page=page,
-        site_language=site_language,
-        status=PublishStatus.PUBLISHED,
-    )
+    page = page_translation.page
 
     block_translations = {
         translation.page_block_id: translation
@@ -56,7 +35,8 @@ def home(request, language_prefix=""):
     blocks = []
 
     for block in (
-        page.blocks.filter(is_active=True)
+        page.blocks
+        .filter(is_active=True)
         .select_related("media")
         .order_by("position", "pk")
     ):
@@ -65,10 +45,11 @@ def home(request, language_prefix=""):
         if translation is None:
             continue
 
-        media_translation = None
-
-        if block.media_id:
-            media_translation = media_translations.get(block.media_id)
+        media_translation = (
+            media_translations.get(block.media_id)
+            if block.media_id
+            else None
+        )
 
         blocks.append(
             {
@@ -90,4 +71,44 @@ def home(request, language_prefix=""):
         request,
         "website/page.html",
         context,
+    )
+
+
+def page(request, page_path=""):
+    resolved_path = resolve_request_path(
+        request,
+        path=page_path,
+    )
+
+    site_context = resolved_path.site_context
+    site_language = site_context.site_language
+
+    if not resolved_path.page_path:
+        if not site_language.home_page_id:
+            raise Http404(
+                "Keine Startseite für diese Website-Sprache konfiguriert."
+            )
+
+        page_translation = get_object_or_404(
+            PageTranslation.objects.select_related(
+                "page",
+                "site_language",
+                "site_language__site",
+                "site_language__language",
+            ),
+            page=site_language.home_page,
+            site_language=site_language,
+            status=PublishStatus.PUBLISHED,
+        )
+
+    else:
+        page_translation = resolve_page(
+            site_language,
+            resolved_path.page_path,
+        )
+
+    return _render_page(
+        request,
+        site_context,
+        page_translation,
     )

@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -296,14 +297,38 @@ class PageTranslation(models.Model):
                 fields=["page", "site_language"],
                 name="unique_page_translation_per_site_language",
             ),
-            models.UniqueConstraint(
-                fields=["site_language", "slug"],
-                name="unique_page_translation_slug_per_site_language",
-            ),
         ]
 
     def __str__(self):
         return f"{self.page.internal_name}: {self.site_language} – {self.title}"
+
+    def clean(self):
+        super().clean()
+
+        if not self.page_id or not self.site_language_id or not self.slug:
+            return
+
+        parent_id = self.page.parent_id
+
+        conflicting_translation = (
+            PageTranslation.objects.filter(
+                site_language=self.site_language,
+                slug=self.slug,
+                page__parent_id=parent_id,
+            )
+            .exclude(pk=self.pk)
+            .exists()
+        )
+
+        if conflicting_translation:
+            raise ValidationError(
+                {
+                    "slug": (
+                        "Dieser Slug wird innerhalb derselben "
+                        "übergeordneten Seite bereits verwendet."
+                    )
+                }
+            )
 
     def save(self, *args, **kwargs):
         if (
