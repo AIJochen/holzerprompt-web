@@ -67,6 +67,19 @@ class SiteLanguage(models.Model):
         help_text="Leer für die Standardsprache; für weitere Sprachen zum Beispiel fr oder es.",
     )
     position = models.PositiveIntegerField("Position", default=0)
+    
+    home_page = models.ForeignKey(
+        "Page",
+        verbose_name="Startseite",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="home_for_site_languages",
+        help_text=(
+            "Sprachunabhängige Seite, die für diese Website-Sprache "
+            "als Startseite verwendet wird."
+        ),
+    )
 
     class Meta:
         verbose_name = "Website-Sprache"
@@ -99,12 +112,6 @@ class MediaAsset(models.Model):
         DOCUMENT = "document", "Dokument"
         OTHER = "other", "Sonstige Datei"
 
-    title = models.CharField(
-        "Titel",
-        max_length=200,
-        blank=True,
-    )
-
     file = models.FileField(
         "Datei",
         upload_to="uploads/%Y/%m/",
@@ -115,19 +122,6 @@ class MediaAsset(models.Model):
         max_length=20,
         choices=MediaType.choices,
         default=MediaType.IMAGE,
-    )
-
-    alt_text = models.CharField(
-        "Alternativtext",
-        max_length=300,
-        blank=True,
-        help_text="Für Bilder: kurze inhaltliche Beschreibung für Barrierefreiheit und SEO.",
-    )
-
-    caption = models.CharField(
-        "Bildunterschrift",
-        max_length=500,
-        blank=True,
     )
 
     copyright_notice = models.CharField(
@@ -164,7 +158,41 @@ class MediaAsset(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return self.title or self.file.name
+        return self.file.name
+
+
+class MediaAssetTranslation(models.Model):
+    media_asset = models.ForeignKey(
+        MediaAsset, verbose_name="Medium", on_delete=models.CASCADE,
+        related_name="translations",
+    )
+    site_language = models.ForeignKey(
+        SiteLanguage, verbose_name="Website-Sprache", on_delete=models.PROTECT,
+        related_name="media_asset_translations",
+    )
+    title = models.CharField("Titel", max_length=200, blank=True)
+    alt_text = models.CharField(
+        "Alternativtext", max_length=300, blank=True,
+        help_text="Für Bilder: kurze inhaltliche Beschreibung für Barrierefreiheit und SEO.",
+    )
+    caption = models.CharField("Bildunterschrift", max_length=500, blank=True)
+    created_at = models.DateTimeField("Erstellt", auto_now_add=True)
+    updated_at = models.DateTimeField("Geändert", auto_now=True)
+
+    class Meta:
+        verbose_name = "Medienübersetzung"
+        verbose_name_plural = "Medienübersetzungen"
+        ordering = ["media_asset", "site_language"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["media_asset", "site_language"],
+                name="unique_media_asset_translation_per_site_language",
+            ),
+        ]
+
+    def __str__(self):
+        label = self.title or self.media_asset.file.name
+        return f"{label} – {self.site_language}"
 
 
 class Page(models.Model):

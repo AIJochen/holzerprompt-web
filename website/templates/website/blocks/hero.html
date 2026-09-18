@@ -74,7 +74,7 @@
 
                         src="{{ block.media.file.url }}"
 
-                        alt="{{ block.media.alt_text }}"
+                        alt="{% if media_translation %}{{ media_translation.alt_text }}{% endif %}"
 
                         {% if block.data.image_width %}
                             width="{{ block.data.image_width }}"

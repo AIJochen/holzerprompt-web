@@ -39,7 +39,7 @@
 
     {% for item in blocks %}
 
-        {% with block=item.block block_translation=item.translation %}
+        {% with block=item.block block_translation=item.translation media_translation=item.media_translation %}
 
             {% if block.block_type == "hero" %}
                 {% include "website/blocks/hero.html" %}

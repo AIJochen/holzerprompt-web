@@ -5,6 +5,7 @@ from .models import (
     KnowledgeArticle,
     Language,
     MediaAsset,
+    MediaAssetTranslation,
     Navigation,
     NavigationItem,
     Page,
@@ -66,6 +67,7 @@ class SiteLanguageAdmin(admin.ModelAdmin):
         "language",
         "is_default",
         "url_prefix",
+        "home_page",
         "position",
         "is_active",
     )
@@ -210,30 +212,81 @@ class PageAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(MediaAsset)
-class MediaAssetAdmin(admin.ModelAdmin):
-    list_display = (
-        "title",
-        "media_type",
-        "file",
-        "width",
-        "height",
-        "created_at",
-    )
-    list_filter = (
-        "media_type",
-        "created_at",
-    )
-    search_fields = (
+class MediaAssetTranslationInline(admin.StackedInline):
+    model = MediaAssetTranslation
+    extra = 0
+    ordering = ("site_language",)
+    fields = (
+        "site_language",
         "title",
         "alt_text",
         "caption",
-        "copyright_notice",
-        "file",
+        "created_at",
+        "updated_at",
     )
     readonly_fields = (
         "created_at",
         "updated_at",
+    )
+
+
+@admin.register(MediaAsset)
+class MediaAssetAdmin(admin.ModelAdmin):
+    list_display = (
+        "file",
+        "media_type",
+        "width",
+        "height",
+        "created_at",
+    )
+
+    list_filter = (
+        "media_type",
+        "created_at",
+    )
+
+    search_fields = (
+        "file",
+        "copyright_notice",
+        "translations__title",
+        "translations__alt_text",
+        "translations__caption",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+    inlines = [
+        MediaAssetTranslationInline,
+    ]
+
+
+@admin.register(MediaAssetTranslation)
+class MediaAssetTranslationAdmin(admin.ModelAdmin):
+    list_display = (
+        "media_asset",
+        "site_language",
+        "title",
+        "updated_at",
+    )
+    list_filter = (
+        "site_language",
+    )
+    search_fields = (
+        "media_asset__file",
+        "title",
+        "alt_text",
+        "caption",
+    )
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+    ordering = (
+        "media_asset",
+        "site_language",
     )
 
 
